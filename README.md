@@ -55,9 +55,34 @@ Open a second terminal:
 streamlit run frontend/streamlit_app.py
 ```
 
+By default, Streamlit runs in **direct mode** (Cloud-ready): it imports backend analysis modules directly and does not require FastAPI to be running.
+
+If you want split deployment mode, set:
+
+```bash
+export BACKEND_API_URL="http://127.0.0.1:8000/analyze-transactions"
+```
+
+Then the app will call the external FastAPI endpoint.
+
+## Deploy on Streamlit Community Cloud
+
+1. Push your repo to GitHub.
+2. Go to [share.streamlit.io](https://share.streamlit.io).
+3. Select repo: `poojaa-12/sentinel-aml-structuring-agent`.
+4. Main file path: `frontend/streamlit_app.py`.
+5. In Advanced Settings -> Secrets, add:
+
+```toml
+OPENAI_API_KEY="your_key_here"
+OPENAI_MODEL="gpt-4.1-mini"
+```
+
+6. Click Deploy and wait for the app URL.
+
 ## Demo script
 
-1. Start backend and Streamlit.
+1. Start Streamlit (and backend only if using API mode).
 2. In Streamlit, upload `data/sample_transactions.csv`.
 3. Confirm output is valid JSON-conformant fields:
    - `account_id`
