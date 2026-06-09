@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from collections import Counter
 
-from openai import OpenAI
+from openai import AuthenticationError, OpenAI, OpenAIError
 from pydantic import ValidationError
 
 from .config import settings
@@ -169,13 +169,22 @@ def analyze_transactions(transactions: list[TransactionRecord]) -> AMLAnalysisRe
     client = OpenAI(api_key=settings.openai_api_key)
     prompt = _build_user_prompt(transactions)
     try:
-        return _request_analysis(client=client, prompt=prompt)
-    except ValidationError as exc:
         try:
-            return _request_analysis(
-                client=client, prompt=prompt, validation_hint=exc.json()
-            )
-        except ValidationError as final_exc:
-            raise LLMOutputValidationError(
-                "Model output failed schema validation after repair attempt."
-            ) from final_exc
+            return _request_analysis(client=client, prompt=prompt)
+        except ValidationError as exc:
+            try:
+                return _request_analysis(
+                    client=client, prompt=prompt, validation_hint=exc.json()
+                )
+            except ValidationError as final_exc:
+                raise LLMOutputValidationError(
+                    "Model output failed schema validation after repair attempt."
+                ) from final_exc
+    except AuthenticationError as exc:
+        raise RuntimeError(
+            "OpenAI authentication failed. Check OPENAI_API_KEY in Streamlit Secrets."
+        ) from exc
+    except OpenAIError as exc:
+        raise RuntimeError(
+            "OpenAI request failed. Verify model access, billing, and API key configuration."
+        ) from exc
