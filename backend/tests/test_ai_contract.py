@@ -134,3 +134,47 @@ def test_analyze_transactions_short_circuits_low_risk_without_api_key() -> None:
     result = analyze_transactions(transactions)
     assert result.recommendation == "AUTO-RESOLVE"
     assert result.suspicion_score < 40
+
+
+def test_analyze_transactions_escalates_high_risk_without_api_key() -> None:
+    transactions = [
+        TransactionRecord(
+            transaction_id="TXN_1004",
+            account_id="ACC_001",
+            timestamp=datetime.fromisoformat("2026-04-10T13:30:00"),
+            amount=9500.00,
+            currency="USD",
+            direction=TransactionDirection.CREDIT,
+            channel="cash",
+            counterparty_name="Branch 17",
+            transaction_type="cash_deposit",
+            memo="in branch deposit",
+        ),
+        TransactionRecord(
+            transaction_id="TXN_1005",
+            account_id="ACC_001",
+            timestamp=datetime.fromisoformat("2026-04-11T10:05:00"),
+            amount=9800.00,
+            currency="USD",
+            direction=TransactionDirection.CREDIT,
+            channel="cash",
+            counterparty_name="Branch 17",
+            transaction_type="cash_deposit",
+            memo="in branch deposit",
+        ),
+        TransactionRecord(
+            transaction_id="TXN_1007",
+            account_id="ACC_001",
+            timestamp=datetime.fromisoformat("2026-04-14T16:40:00"),
+            amount=29000.00,
+            currency="USD",
+            direction=TransactionDirection.DEBIT,
+            channel="wire",
+            counterparty_name="Binance Offshore",
+            transaction_type="wire_transfer",
+            memo="international wire",
+        ),
+    ]
+    result = analyze_transactions(transactions)
+    assert result.recommendation == "ESCALATE TO HUMAN"
+    assert "TXN_1007" in result.flagged_transaction_ids

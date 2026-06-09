@@ -95,6 +95,30 @@ def _auto_resolve_from_heuristic(
     )
 
 
+def _escalate_from_heuristic(
+    transactions: list[TransactionRecord], risk_score: int, flagged_ids: list[str]
+) -> AMLAnalysisResult:
+    account_id = _primary_account_id(transactions)
+    flagged_text = ", ".join(flagged_ids) if flagged_ids else "No IDs captured."
+    narrative = (
+        "Automated heuristic screening identified elevated structuring risk based on clustered "
+        f"sub-threshold cash and/or high-value transfer behavior. Primary transaction lineage: {flagged_text}.\n\n"
+        "Observed timing and amount patterns indicate potential threshold-evasion behavior, which is not "
+        "readily explained by stable recurring business cadence. The combination of cash proximity to "
+        "reporting limits and rapid movement warrants enhanced review.\n\n"
+        "Given this risk profile, the case should be escalated for analyst investigation, source-of-funds "
+        "verification, and potential SAR drafting with full transaction traceability."
+    )
+    return AMLAnalysisResult(
+        account_id=account_id,
+        suspicion_score=max(risk_score, 40),
+        typology_identified="Structuring (Heuristic Detection)",
+        flagged_transaction_ids=flagged_ids[:10],
+        sar_narrative=narrative,
+        recommendation="ESCALATE TO HUMAN",
+    )
+
+
 def _build_user_prompt(transactions: list[TransactionRecord]) -> str:
     serialized = [
         {
@@ -164,7 +188,10 @@ def analyze_transactions(transactions: list[TransactionRecord]) -> AMLAnalysisRe
         return _auto_resolve_from_heuristic(transactions=transactions, risk_score=risk_score)
 
     if not settings.openai_api_key:
-        raise RuntimeError("OPENAI_API_KEY is required to run analysis.")
+        # No-cost fallback mode for demos when LLM access is unavailable.
+        return _escalate_from_heuristic(
+            transactions=transactions, risk_score=risk_score, flagged_ids=flagged_ids
+        )
 
     client = OpenAI(api_key=settings.openai_api_key)
     prompt = _build_user_prompt(transactions)

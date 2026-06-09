@@ -8,6 +8,7 @@ Sentinel is a constrained, enterprise-style AML demo that ingests raw bank-like 
 - **AML domain signal:** Includes both true-positive structuring and false-positive business cadence scenarios.
 - **Connector skills:** Demonstrates realistic ingestion path from messy CSV upload to API analysis and UI rendering.
 - **Auditability:** SAR narrative is required to cite transaction IDs for data lineage.
+- **No-cost fallback:** If no OpenAI key is configured, Sentinel still runs deterministically using a heuristic gate and returns structured AML output.
 
 ## Project layout
 
@@ -33,6 +34,9 @@ pip install -r requirements.txt
 ```bash
 export OPENAI_API_KEY="your_key_here"
 ```
+
+If you do not want to use paid LLM calls, skip setting `OPENAI_API_KEY`.
+Sentinel will run in heuristic-only mode and still return structured `AMLAnalysisResult` JSON.
 
 Optional model override:
 
