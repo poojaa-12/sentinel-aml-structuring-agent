@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+streamlit
+openai
+pydantic
+pydantic-settings
+pandas
+python-multipart
+requests
+pytest
